@@ -61,6 +61,7 @@ class RotatableSprite(pygame.sprite.Sprite):
     self._update_draw_state()
 
   def _update_draw_state(self):
+    # TODO
     # Be smarter, don't redraw stuff that has not changed
     # Also keep the squeezed image
     squeeze_size = (int(round(self.texture_rect.width * 
@@ -135,10 +136,13 @@ class RotatableSprite(pygame.sprite.Sprite):
     return self.texture.get_at(tex_pos)
 
   def covers(self, pos):
-    ipos = tip_sprite.screen_2_texture_pos(pos)
+    if not self.rect.collidepoint(pos):
+        return False
+    ipos = self.screen_2_texture_pos(pos)
+    # The pixel is inside the texture and is not transparent
     return (ipos[0] >= 0.0 and ipos[0] <= 1.0 and
             ipos[1] >= 0.0 and ipos[1] <= 1.0 and
-            tip_sprite.get_texture_at(ipos)[3] != 0)
+            self.get_texture_at(ipos)[3] != 0)
     
 
 if __name__ == "__main__":
@@ -170,7 +174,8 @@ if __name__ == "__main__":
         pygame.image.load('mouse_pointer_unpadded.png').convert_alpha()
     # A rotating sprite, one rotation in four seconds
     rotating_sprite = RotatableSprite(mouse_texture, (20, 20))
-    # A sprite that use a texture without a single pixel transparent border
+    # A sprite that use a texture without the single pixel transparent border
+    # This will cause the border to be ugly when rotating
     noborder_sprite = RotatableSprite(mouse_texture_nopad, (20, 60))
     # A sprite that only use the left part of the texture
     half_rect = mouse_texture.get_rect(width = mouse_texture.get_width()/2)
@@ -193,7 +198,7 @@ if __name__ == "__main__":
     # A sprite rotating about it's tip smooth rot
     smooth_tip_sprite = RotatableSprite(mouse_texture, (150, 90), 
                                         scale = 2.0,
-                                        center_of_rotation = (1, 1), 
+                                        center_of_rotation = (1, 1),  # Top left,  not counting the one pixel border
                                         smooth_noncentered_zoom = True)
     # A sprite rotating about it's tip smooth rot
     smooth_tip_sprite2 = RotatableSprite(mouse_texture, (150, 150), 
@@ -210,22 +215,23 @@ if __name__ == "__main__":
     run = True
     MS_PER_SEC = 1000.0
     while run:
+        # Try to keep a fps of 40. Returns the ms passed since last call. 
         secs = clock.tick(40) / MS_PER_SEC
+
         events = pygame.event.get()
         for event in events:
             if (event.type == QUIT or 
                 (event.type == KEYDOWN and event.key in [K_ESCAPE, K_q])):
                 run = False
+
         for s in four_sec_rot_sprites:
             s.angle += 0.25 * 360 * secs
-        #pos_in_big = tip_sprite.screen_2_texture_pos(*(pygame.mouse.get_pos()))
-        #if (pos_in_big[0] >= 0.0 and pos_in_big[0] <= 1.0 and
-            #pos_in_big[1] >= 0.0 and pos_in_big[1] <= 1.0 and
-            #tip_sprite.get_texture_at(pos_in_big)[3] != 0):
-        if tip_sprite.covers(pygame.mouse.get_pos()):
+
+        if smooth_tip_sprite.covers(pygame.mouse.get_pos()):
           pygame.mouse.set_cursor(*pygame.cursors.broken_x)
         else:
           pygame.mouse.set_cursor(*pygame.cursors.diamond)
+
         draw_sprites()
 
 
