@@ -1,0 +1,1 @@
+This lib makes it possible to read the individual input from each mouse connected to the computer. Great for creating multiplayer-singlescreen games with pygame.
